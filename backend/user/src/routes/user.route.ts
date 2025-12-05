@@ -8,7 +8,7 @@ router.post("/login", loginUser)
 router.post("/verify", verifyUser)
 router.get("/me", isAuth, myProfile)
 router.get("/users/all",isAuth,getAllUser)
-router.get("/users/:id", getUser)
+router.get("/user/:id", getUser)
 router.post("/update/user",isAuth,updateName)
 
 export default router
