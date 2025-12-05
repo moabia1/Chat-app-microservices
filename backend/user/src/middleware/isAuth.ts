@@ -18,7 +18,7 @@ export const isAuth = async (req: AuthenticateRequest, res: Response, next: Next
 
     const token = authHeader.split(" ")[1] as string
     const decode = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload
-    
+      
     if (!decode || !decode.user) {
       res.status(401).json({ message: "unauthorized user" })
       return
