@@ -57,7 +57,20 @@ const ChatApp = () => {
   const handleLogout = () => logoutUser();
 
   async function fetchChat() {
-    
+    const token = Cookies.get("token");
+    try {
+      const { data } = await axios.get(`${chatService}/api/v1/message/${selectedUser}`, {
+        headers: {
+        Authorization:`Bearer ${token}`
+        }
+      })
+      setMessages(data.messages)
+      setUser(data.user)
+      await fetchChats()
+    } catch (error) {
+      console.log(error)
+      toast.error("Failed to load messages")
+    }
   }
   
   async function createChat(u: User) {
@@ -76,6 +89,12 @@ const ChatApp = () => {
       toast.error("Failed to start chat")
     }
   }
+
+  useEffect(() => {
+    if (selectedUser) {
+      fetchChat()
+    }
+  },[selectedUser])
 
   if (loading) return <Loading />;
   return (
