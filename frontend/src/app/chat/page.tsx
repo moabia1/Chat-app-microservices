@@ -7,6 +7,9 @@ import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import Cookies from "js-cookie";
 import axios from "axios";
+import ChatHeader from "@/components/ChatHeader";
+import ChatMessages from "@/components/ChatMessages";
+import MessageInput from "@/components/MessageInput";
 
 export interface Message {
   _id: string;
@@ -59,42 +62,99 @@ const ChatApp = () => {
   async function fetchChat() {
     const token = Cookies.get("token");
     try {
-      const { data } = await axios.get(`${chatService}/api/v1/message/${selectedUser}`, {
-        headers: {
-        Authorization:`Bearer ${token}`
+      const { data } = await axios.get(
+        `${chatService}/api/v1/message/${selectedUser}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
-      })
-      setMessages(data.messages)
-      setUser(data.user)
-      await fetchChats()
+      );
+      setMessages(data.messages);
+      setUser(data.user);
+      await fetchChats();
     } catch (error) {
-      console.log(error)
-      toast.error("Failed to load messages")
-    }
-  }
-  
-  async function createChat(u: User) {
-    const token = Cookies.get("token")
-    try {
-      const { data } = await axios.post(`${chatService}/api/v1/chat/new`, { otherUserId: u._id }, {
-        headers: {
-        Authorization:`Bearer ${token}`
-        }
-      })
-      
-      setSelectedUser(data.chatId)
-      setShowAllUsers(false)
-      await fetchChats()
-    } catch (error) {
-      toast.error("Failed to start chat")
+      console.log(error);
+      toast.error("Failed to load messages");
     }
   }
 
+  async function createChat(u: User) {
+    const token = Cookies.get("token");
+    try {
+      const { data } = await axios.post(
+        `${chatService}/api/v1/chat/new`,
+        { otherUserId: u._id },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setSelectedUser(data.chatId);
+      setShowAllUsers(false);
+      await fetchChats();
+    } catch (error) {
+      toast.error("Failed to start chat");
+    }
+  }
+
+  const handleMessageSend = async (e: any,imageFile?: File | null) => {
+    e.preventDefault();
+
+    if (!message.trim() && !imageFile) return;
+    if (!selectedUser) return;
+    
+    // Socket work
+
+    const token = Cookies.get("token")
+
+    try {
+      const formData = new FormData()
+      formData.append("chatId", selectedUser)
+      if (message.trim()) {
+        formData.append("text",message)
+      }
+
+      if (imageFile) {
+        formData.append("image",imageFile)
+      }
+
+      const { data } = await axios.post(`${chatService}/api/v1/message`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type" : "multipart/form-data"
+        }
+      })
+      setMessages((prev) => {
+        const currentMessages = prev || []
+        const messageExists = currentMessages.some((msg) => msg._id === data.message._id);
+        
+        if (!messageExists) {
+          return [...currentMessages, data.message]
+        }
+        return currentMessages
+      });
+
+      setMessage("")
+    } catch (error) {
+      
+    }
+  }
+
+  const handleTyping = (value: string) => {
+    setMessage(value)
+
+    if (!selectedUser) return;
+    
+    // Socket setup
+  }
   useEffect(() => {
     if (selectedUser) {
-      fetchChat()
+      fetchChat();
     }
-  },[selectedUser])
+  }, [selectedUser]);
 
   if (loading) return <Loading />;
   return (
@@ -114,7 +174,15 @@ const ChatApp = () => {
       />
 
       <div className="flex flex-1 flex-col justify-between p-4 backdrop-blur-xl bg-white/5 border border-white/10">
+        <ChatHeader
+          user={user}
+          setSidebarOpen={setSidebarOpen}
+          isTyping={isTyping}
+        />
+
+        <ChatMessages selectedUser={selectedUser} messages={messages} loggedInUser={loggedinUser} />
         
+        <MessageInput/>
       </div>
     </div>
   );
