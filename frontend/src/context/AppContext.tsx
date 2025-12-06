@@ -104,7 +104,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
           Authorization:`Bearer ${token}`
         }
       })
-      setChats(data.chat)
+      setChats(data.chats)
     } catch (error) {
       console.log(error)
     }

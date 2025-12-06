@@ -2,6 +2,7 @@ import axios from "axios";
 import tryCatch from "../config/try-catch.js";
 import { Chat } from "../models/chat.model.js";
 import { Messages } from "../models/messages.model.js";
+import mongoose from "mongoose";
 export const createNewChat = tryCatch(async (req, res) => {
     const userId = req.user?._id;
     const { otherUserId } = req.body;
@@ -31,7 +32,7 @@ export const getAllChats = tryCatch(async (req, res) => {
     const chatWithUserData = await Promise.all(chats.map(async (chat) => {
         const otherUserId = chat.users.find(id => id !== userId);
         const unseenCount = await Messages.countDocuments({
-            chatId: chat._id,
+            chatId: new mongoose.Types.ObjectId(chat._id),
             sender: { $ne: userId },
             seen: false
         });
