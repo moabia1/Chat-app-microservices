@@ -51,7 +51,7 @@ const ChatMessages = ({
               return (
                 <div
                   key={i}
-                  className={`flex flex-col gap-1 mt-2 ${
+                  className={`flex flex-col gap-1 mt-2  no-scrollbar ${
                     isSentByme ? "items-end" : "items-start"
                   }`}
                 >
@@ -67,6 +67,8 @@ const ChatMessages = ({
                         <Image
                           src={e.image.url}
                           alt="shared image"
+                          width={200}
+                          height={200}
                           className="max-w-full h-auto rounded-lg"
                         />
                       </div>
@@ -81,14 +83,20 @@ const ChatMessages = ({
                     }`}
                   >
                     <span>{moment(e.createdAt).format("hh:mm A .MMM D")}</span>
-                    {isSentByme && <div className="flex items-center ml-1">
-                      {e.seen ? <div className="flex items-center gap-1 text-blue-400 ">
-                        <CheckCheck className="w-3 h-3" />
-                        {
-                          e.seenAt && <span>{moment(e.seenAt).format("hh:mm A")}</span>
-                        }
-                      </div>:<Check className="w-3 h-3 text-gray-500"/>}
-                    </div>}
+                    {isSentByme && (
+                      <div className="flex items-center ml-1">
+                        {e.seen ? (
+                          <div className="flex items-center gap-1 text-blue-400 ">
+                            <CheckCheck className="w-3 h-3" />
+                            {e.seenAt && (
+                              <span>{moment(e.seenAt).format("hh:mm A")}</span>
+                            )}
+                          </div>
+                        ) : (
+                          <Check className="w-3 h-3 text-gray-500" />
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               );

@@ -10,6 +10,7 @@ import axios from "axios";
 import ChatHeader from "@/components/ChatHeader";
 import ChatMessages from "@/components/ChatMessages";
 import MessageInput from "@/components/MessageInput";
+import { error } from "console";
 
 export interface Message {
   _id: string;
@@ -100,7 +101,7 @@ const ChatApp = () => {
     }
   }
 
-  const handleMessageSend = async (e: any,imageFile?: File | null) => {
+  const handleSendMessage = async (e: any,imageFile?: File | null) => {
     e.preventDefault();
 
     if (!message.trim() && !imageFile) return;
@@ -138,8 +139,10 @@ const ChatApp = () => {
       });
 
       setMessage("")
-    } catch (error) {
-      
+
+      const displayText = imageFile ? "📷 image" : message
+    } catch (err:any) {
+      toast.error(err.response.data.message)
     }
   }
 
@@ -182,7 +185,7 @@ const ChatApp = () => {
 
         <ChatMessages selectedUser={selectedUser} messages={messages} loggedInUser={loggedinUser} />
         
-        <MessageInput/>
+        <MessageInput selectedUser={selectedUser} message={message} setMessage={handleTyping} handleSendMessage={handleSendMessage} />
       </div>
     </div>
   );
