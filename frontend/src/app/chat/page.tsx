@@ -11,6 +11,7 @@ import ChatHeader from "@/components/ChatHeader";
 import ChatMessages from "@/components/ChatMessages";
 import MessageInput from "@/components/MessageInput";
 import { error } from "console";
+import { socketData } from "@/context/SocketContext";
 
 export interface Message {
   _id: string;
@@ -38,6 +39,9 @@ const ChatApp = () => {
     fetchChats,
     setChats,
   } = useAppData();
+
+  const { onlineUsers } = socketData();
+  console.log(onlineUsers)
 
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [message, setMessage] = useState("");
@@ -174,6 +178,7 @@ const ChatApp = () => {
         setSelectedUser={setSelectedUser}
         handleLogout={handleLogout}
         createChat={createChat}
+        onlineUsers={onlineUsers}
       />
 
       <div className="flex flex-1 flex-col justify-between p-4 backdrop-blur-xl bg-white/5 border border-white/10">
