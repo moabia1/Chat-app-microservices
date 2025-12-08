@@ -4,6 +4,7 @@ import type { AuthenticatedRequest } from "../middlewares/isAuth.js";
 import { Chat } from "../models/chat.model.js";
 import { Messages } from "../models/messages.model.js";
 import mongoose from "mongoose";
+import { getRecieverSocketId, io } from "../config/socket.js";
 
 export const createNewChat = tryCatch(async (req:AuthenticatedRequest, res) => {
   const userId = req.user?._id
@@ -123,12 +124,21 @@ export const sendMessage = tryCatch(async (req: AuthenticatedRequest, res) => {
   }
 
   // Socket setup
+  const receiverSocketId = getRecieverSocketId(otherUserId.toString())
+  let isReceiverInChatRoom = false;
+
+  if (receiverSocketId) {
+    const recceiverSocket = io.sockets.sockets.get(receiverSocketId)
+    if (recceiverSocket && recceiverSocket.rooms.has(chatId)) {
+      isReceiverInChatRoom = true
+    }
+  }
 
   let messageData = {
     chatId: chatId,
     sender: senderId,
-    seen: false,
-    seenAt:undefined
+    seen: isReceiverInChatRoom,
+    seenAt: isReceiverInChatRoom ? new Date() : undefined
   } as any
   if (imageFile) {
     messageData.image = {
@@ -156,7 +166,24 @@ export const sendMessage = tryCatch(async (req: AuthenticatedRequest, res) => {
     updatedAt:new Date()
   }, { new: true })
   
-  //emit
+  //emit to socket
+  // Emit the new message to the chat room so connected participants receive it
+  io.to(chatId).emit("newMessage", savedMessage)
+
+  // If the receiver has a socket but is NOT currently in the chat room,
+  // notify them directly so they still get the new message notification.
+  if (receiverSocketId && !isReceiverInChatRoom) {
+    io.to(receiverSocketId).emit("newMessage", savedMessage)
+  }
+
+  if (isReceiverInChatRoom && senderSocketId) {
+    io.to(senderSocketId).emit("messagesSeen",{
+      chatId: chatId,
+      seenBy: otherUserId,
+      messageIds:[savedMessage._id]
+    })
+  }
+
   res.status(201).json({
     message: savedMessage,
     sender:senderId
@@ -210,7 +237,19 @@ export const getMessagesByChat = tryCatch(async (req: AuthenticatedRequest, res)
       res.status(400).json({ message: "No Other user" })
       return
     }
-    const { data } = await axios.get(`${process.env.USER_SERVICE}/api/v1/user/${otherUserId}`)
+    const { data } = await axios.get(`${process.env.USER_SERVICE}/api/v1/user/${otherUserId}`);
+
+    // socket work
+    if (messageMarkSeen.length>0) {
+      const otherUserSocketId = getRecieverSocketId(otherUserId.toString())
+      if (otherUserSocketId) {
+        io.to(otherUserSocketId).emit("messagesSeen", {
+          chatId: chatId,
+          seenBy: userId,
+          messageIds:messageMarkSeen.map((msg)=>msg._id)
+        })
+      }
+    }
     res.json({
       messages,
       user:data
